@@ -112,7 +112,7 @@
                 <input type='checkbox' class='done-item' ${task.completed ? 'checked' : ''}>
                 <button class='delete-item'>X</button>`
             ;
-            todoList.appendChild(todoItem);
+            todoList.prepend(todoItem);
 
             todoItem.dataset.id = task.id;
             
