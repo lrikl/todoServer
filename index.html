@@ -23,7 +23,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, addDoc, doc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, addDoc, doc, deleteDoc, updateDoc, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBwwf5QsqT2NSoNdAA-54isZtwIRDLna80",
@@ -35,10 +35,10 @@
             measurementId: "G-FP3EDVTTHF"
             };
     
-        // инициализация базы
+
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        const tasksCollection = collection(db, 'tasks'); // создания коллекций
+        const tasksCollection = collection(db, 'tasks'); 
 
         const todoList = document.querySelector('.todo-list');
         const todoInput = document.getElementById('todo-main-input');
@@ -46,7 +46,7 @@
         const deleteButtonAll = document.getElementById('del-allbtn');
         let todoTasksArr = [];
 
-        onSnapshot(tasksCollection, (querySnapshot) => {
+        onSnapshot(query(tasksCollection, orderBy('timestamp', 'asc')), (querySnapshot) => {
             todoTasksArr = [];
         todoList.innerHTML = '';
         querySnapshot.forEach((doc) => {
@@ -86,7 +86,8 @@
         async function addTodo() {
             const data = {
                     text: todoInput.value.trim(),
-                    completed: false
+                    completed: false,
+                    timestamp: serverTimestamp()
                 };
             if (!data.text) {
                 alert('пустые поля нельзя отправить');
