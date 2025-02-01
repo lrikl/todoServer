@@ -39,7 +39,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const tasksCollection = collection(db, 'tasks'); // создания коллекций
-        
+
         const todoList = document.querySelector('.todo-list');
         const todoInput = document.getElementById('todo-main-input');
         const todoBlock = document.querySelector('.todo-block');
@@ -68,6 +68,12 @@
                 handleEdit(target);
             } else if (target.id === 'del-allbtn') {
             await clearAllTodos();
+            }
+        });
+
+        todoInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                document.getElementById('add-todo').click();
             }
         });
 
@@ -184,6 +190,7 @@
                 button.style.display = visible ? '' : 'none';
             });
         }
+
         updateDeleteButtonAll();
     </script>
 </body>
