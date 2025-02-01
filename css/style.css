@@ -4,15 +4,16 @@ body {
     padding: 0;
     background-color: #f4f4f9;
     color: #333;
-    padding: 50px;
+    padding: clamp(16px, 4vw, 50px);
 }
 
 .todo-block {
     display: flex;
     flex-direction: column;
-    width: 800px;
+    max-width: 800px;
+    width: 100%;
     margin: 0 auto;
-    padding: 20px;
+    padding: clamp(12px, 1.5vw, 20px);
     background: #fff;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     border-radius: 8px;
@@ -127,14 +128,4 @@ align-self: flex-end;
 .save-item {
     padding: 8px;
     font-size: 12px;
-}
-
-@media(max-width: 480px) {
-    body {
-        padding: 10px;
-    }
-    .todo-block {
-        width: 320px;
-        padding: 10px;
-    }
 }
