@@ -130,8 +130,11 @@ align-self: flex-end;
 }
 
 @media(max-width: 480px) {
+    body {
+        padding: 10px;
+    }
     .todo-block {
         width: 320px;
-        padding: 12px;
+        padding: 10px;
     }
 }
