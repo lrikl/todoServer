@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yaroslav's DZ</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+            color: #333;
+            padding: 50px;
+        }
+
+        .todo-block {
+            display: flex;
+            flex-direction: column;
+            width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #fff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #555;
+        }
+
+        .todo-input-wrap {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .todo-input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        .add-btn, 
+        .save-item {
+            padding: 10px 20px;
+            background-color: #008000;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .add-btn:hover, 
+        .save-item:hover {
+            background-color: #007200;
+        }
+
+        .todo-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .todo-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            background: #fafafa;
+        }
+
+        .todo-p {
+            flex: 1;
+        }
+
+        .delete-item,
+        .delete-all {
+            background-color: #d9534f;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .delete-item:hover, 
+        .delete-all:hover {
+            background-color: #c9302c;
+        }
+
+        .delete-all {
+        align-self: flex-end;
+        }
+
+        .done-item {
+            cursor: pointer;
+        }
+
+        .check-bg {
+            background-color: #b9e9b9;
+            border-color: #008000;
+        }
+
+        .edit-item {
+            background: none;
+            border: none;
+            width: 16px;
+            height: 16px;
+            padding: 0;
+            cursor: pointer;
+            transition: 0.5s ease-in-out;
+        }
+
+        .edit-item::before {
+            content: "";
+            background: url("../icon/icon1.svg") no-repeat center/contain;
+            display: block;
+            width: inherit;
+            height: inherit;
+        }
+
+        .edit-item:hover {
+            transform: scale(1.1);
+        }
+
+        .save-item {
+            padding: 8px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="todo-block">
+
+        <h1>TODO List</h1>
+
+        <div class="todo-input-wrap">
+            <input type="text" id="todo-main-input" class="todo-input" placeholder="Add task...">
+            <button id="add-todo" class="add-btn">Add</button>
+        </div>
+
+        <ul class="todo-list">
+        </ul>
+
+        <button class="delete-all" id="del-allbtn">Delete All</button>
+
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, onSnapshot, addDoc, doc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+
+        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+        const firebaseConfig = {
+            apiKey: "AIzaSyBwwf5QsqT2NSoNdAA-54isZtwIRDLna80",
+            authDomain: "todoserver-ef08e.firebaseapp.com",
+            projectId: "todoserver-ef08e",
+            storageBucket: "todoserver-ef08e.firebasestorage.app",
+            messagingSenderId: "63186881975",
+            appId: "1:63186881975:web:8b6d2ac98ca9b9cb5aec32",
+            measurementId: "G-FP3EDVTTHF"
+            };
+    
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const tasksCollection = collection(db, 'tasks'); // ref to db collection
+
+        const todoList = document.querySelector('.todo-list');
+        const todoInput = document.getElementById('todo-main-input');
+        const todoBlock = document.querySelector('.todo-block');
+        const deleteButtonAll = document.getElementById('del-allbtn');
+        let todoTasksArr = [];
+       
+        // Listen for changes in firebase and update the app
+        onSnapshot(tasksCollection, (querySnapshot) => {
+             todoTasksArr = [];
+            todoList.innerHTML = '';
+            querySnapshot.forEach((doc) => {
+                const task = { id: doc.id, ...doc.data() };
+                todoTasksArr.push(task);
+                 addTodoToDOM(task);
+            });
+            updateDeleteButtonAll();
+        });
+
+        todoBlock.addEventListener('click', async event => {
+            const target = event.target;
+
+            if (target.id === 'add-todo') {
+                await addTodo();
+            } else if (target.classList.contains('delete-item')) {
+                await deleteTodoItem(target);
+            } else if (target.classList.contains('edit-item')) {
+                handleEdit(target);
+            } else if (target.id === 'del-allbtn') {
+               await clearAllTodos();
+            }
+        });
+
+        todoList.addEventListener('change', async event => {
+            if (event.target.classList.contains('done-item')) {
+                await toggleTodoCompletion(event.target);
+            }
+        });
+
+        async function addTodo() {
+            const data = {
+                    text: todoInput.value.trim(),
+                    completed: false
+                };
+            if (!data.text) {
+                alert('Текст завдань не може бути порожнім');
+                return;
+            }
+
+            await addDoc(tasksCollection, data);
+            todoInput.value = '';
+        }
+
+        function addTodoToDOM(task) {
+             const todoItem = document.createElement('li');
+            todoItem.classList.add('todo-item');
+            
+            if (task.completed) {
+                todoItem.classList.add('check-bg');
+            }
+
+            todoItem.innerHTML = 
+                `<p class='todo-p'>${task.text}</p>
+                <button class='edit-item'></button>
+                <input type='checkbox' class='done-item' ${task.completed ? 'checked' : ''}>
+                <button class='delete-item'>X</button>`
+            ;
+            todoList.appendChild(todoItem);
+
+            todoItem.dataset.id = task.id;
+            
+        }
+
+        async function deleteTodoItem(button) {
+            const todoItem = button.closest('.todo-item');
+            const taskId = todoItem.dataset.id;
+
+            await deleteDoc(doc(db, 'tasks', taskId));
+        }
+
+
+        function handleEdit(button) {
+            const todoItem = button.closest('.todo-item');
+            const textElement = todoItem.querySelector('.todo-p');
+            const currentText = textElement.textContent;
+            const taskId = todoItem.dataset.id;
+          
+
+            toggleOtherTodoButtons(todoItem, false);
+
+            const editInput = document.createElement('input');
+            editInput.type = 'text';
+            editInput.value = currentText;
+            editInput.classList.add('todo-input');
+
+            const saveButton = document.createElement('button');
+            saveButton.textContent = 'Save';
+            saveButton.classList.add('save-item');
+
+            todoItem.replaceChild(editInput, textElement);
+            todoItem.appendChild(saveButton);
+            button.style.display = 'none';
+
+            saveButton.addEventListener('click', async () => {
+                const newText = editInput.value.trim();
+
+                if (!newText) {
+                    alert('Текст завдань не може бути порожнім');
+                    return;
+                }
+                 
+                await updateDoc(doc(db, 'tasks', taskId), { text: newText });
+                textElement.textContent = newText;
+                todoItem.replaceChild(textElement, editInput);
+                saveButton.remove();
+                button.style.display = '';
+
+                toggleOtherTodoButtons(todoItem, true);
+            });
+        }
+
+        async function toggleTodoCompletion(checkbox) {
+            const todoItem = checkbox.closest('.todo-item');
+            const taskId = todoItem.dataset.id;
+
+             await updateDoc(doc(db, 'tasks', taskId), { completed: checkbox.checked });
+            todoItem.classList.toggle('check-bg');
+        }
+
+        async function clearAllTodos() {
+          
+            const taskDelet = todoTasksArr.map(task => deleteDoc(doc(db, 'tasks', task.id)));
+            await Promise.all(taskDelet)
+          
+        }
+
+        function updateDeleteButtonAll() {
+             deleteButtonAll.style.display = todoTasksArr.length > 1 ? '' : 'none';
+        }
+
+        function toggleOtherTodoButtons(todoItem, visible) {
+            const buttons = todoItem.querySelectorAll('.done-item, .delete-item');
+            buttons.forEach(button => {
+                button.style.display = visible ? '' : 'none';
+            });
+        }
+        updateDeleteButtonAll();
+    </script>
+</body>
+</html>
