@@ -13,7 +13,6 @@ const firebaseConfig = {
     measurementId: "G-FP3EDVTTHF"
 };
 
-
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const tasksCollection = collection(db, 'tasks'); 
@@ -32,6 +31,7 @@ querySnapshot.forEach((doc) => {
     todoTasksArr.push(task);
         addTodoToDOM(task);
 });
+
 updateDeleteButtonAll();
 });
 
@@ -84,16 +84,29 @@ function addTodoToDOM(task) {
         todoItem.classList.add('check-bg');
     }
 
-    todoItem.innerHTML = 
-        `<p class='todo-p'>${task.text}</p>
-        <button class='edit-item'></button>
-        <input type='checkbox' class='done-item' ${task.completed ? 'checked' : ''}>
-        <button class='delete-item'>X</button>`
-    ;
-    todoList.prepend(todoItem);
+    const taskText = document.createElement('div');
+    taskText.classList.add('todo-p');
+    taskText.textContent = task.text; 
 
+    const editButton = document.createElement('button');
+    editButton.classList.add('edit-item');
+
+    const doneCheckbox = document.createElement('input');
+    doneCheckbox.type = 'checkbox';
+    doneCheckbox.classList.add('done-item');
+    doneCheckbox.checked = task.completed;
+
+    const deleteButton = document.createElement('button');
+    deleteButton.classList.add('delete-item');
+    deleteButton.textContent = 'X';
+
+    todoItem.appendChild(taskText);
+    todoItem.appendChild(editButton);
+    todoItem.appendChild(doneCheckbox);
+    todoItem.appendChild(deleteButton);
+
+    todoList.prepend(todoItem);
     todoItem.dataset.id = task.id;
-    
 }
 
 async function deleteTodoItem(button) {
@@ -102,7 +115,6 @@ async function deleteTodoItem(button) {
 
     await deleteDoc(doc(db, 'tasks', taskId));
 }
-
 
 function handleEdit(button) {
     const todoItem = button.closest('.todo-item');
@@ -153,10 +165,8 @@ async function toggleTodoCompletion(checkbox) {
 }
 
 async function clearAllTodos() {
-
     const taskDelet = todoTasksArr.map(task => deleteDoc(doc(db, 'tasks', task.id)));
     await Promise.all(taskDelet)
-
 }
 
 function updateDeleteButtonAll() {
@@ -171,16 +181,6 @@ function toggleOtherTodoButtons(todoItem, visible) {
 }
 
 updateDeleteButtonAll();
-
-
-
-
-
-
-
-
-
-
 
 
 
